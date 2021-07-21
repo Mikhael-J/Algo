@@ -1,4 +1,5 @@
-from py.utility.pile import Pile
+from utility.pile import Pile
+
 
 def backTracking(nbElement):
     pos = 0
@@ -19,8 +20,8 @@ def backTracking(nbElement):
             else:
                 if checkMagicSequence(res):
                     print(res)
-                if res[len(res)-1] == 0:
-                    while res[len(res)-1] == 0:
+                if res[len(res) - 1] == 0:
+                    while res[len(res) - 1] == 0:
                         res.pop()
                         pos -= 1
                     res.pop()
@@ -44,11 +45,11 @@ def checkMagicSequence(table):
     for i in range(len(table)):
         count = 0
         for j in range(len(table)):
-            if(i == table[j]):
+            if i == table[j]:
                 count += 1
-        if(not count == table[i]):
+        if not count == table[i]:
             return False
-    if(sommeTable(table) == len(table)):
+    if sommeTable(table) == len(table):
         return True
     return False
 
