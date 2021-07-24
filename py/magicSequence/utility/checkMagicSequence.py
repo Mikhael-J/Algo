@@ -1,4 +1,3 @@
-
 def checkMagicSequence(table):
     for i in range(len(table)):
         count = 0
@@ -11,10 +10,10 @@ def checkMagicSequence(table):
         return True
     return False
 
+
 def sommeTable(table):
     res = 0
     for i in table:
         if not i == None:
             res = res + i
     return res
-
