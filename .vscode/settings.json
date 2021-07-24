@@ -1,0 +1,4 @@
+{
+    "python.pythonPath": "C:/Python39/Python.exe",
+    "python.autoComplete.extraPaths": [ "/py/magicSequence/utility" ] 
+}

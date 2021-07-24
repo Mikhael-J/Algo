@@ -1,28 +1,27 @@
 class Pile:
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.pile = []
 
-    def add(self, i):
+    def puch(self, i: any) -> None:
         self.pile.append(i)
 
-    def remove(self):
+    def remove(self) -> None:
         self.pile.pop()
 
-    def size(self):
+    def size(self) -> int:
         return len(self.pile)
 
-    def getPile(self):
-        return self.pile
-
-    def get_remove_Last(self):
-        last = self.pile[len(self.pile)-1]
+    def get_remove_Last(self) -> any:
+        last = self.last()
         self.remove()
         return last
 
-    def somme(self):
-        res = 0
-        for i in self.pile:
-            res = i + res
-        return res
+    def empty(self) -> bool:
+        return self.pile == []
 
+    def last(self) -> any:
+        return self.pile[-1]
+
+    def get(self):
+        return self.pile
