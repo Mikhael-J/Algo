@@ -1,15 +1,3 @@
-from typing import List
-
-
-def place_piece(
-    chess_bord: List[List[int]] = [[] for y in range(10)],
-):
-    for i in range(10):
-        if is_safe(chess_bord, 4, 4):
-            # chess_bord[pos][i] = Queen("white", [i, j]) or Queen("Black", [i, j])
-            pass
-
-
 def is_safe(chess_bord, pos_list, pos_piece):
     size_bord = len(chess_bord)
     # [vertical_droite_haut, vertical_droite_bas, vertical_gauche_haut, vertical_gauche_bas]
