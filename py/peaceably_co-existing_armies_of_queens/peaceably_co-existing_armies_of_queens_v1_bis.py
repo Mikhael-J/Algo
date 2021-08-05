@@ -8,6 +8,7 @@ import operator
 class Couleur(Enum):
     BLACK = "b"
     WHITE = "w"
+    NONE = "n"
 
 
 class Queen:
@@ -31,17 +32,8 @@ class Chess_bord:
 
         self.nb_white = 0
         self.nb_black = 0
+
         self.cell_no_access = []
-
-    def get_elements_vertical(self, pos_list: int) -> List[Queen]:
-        return self.bord[pos_list]
-
-    def get_bord(self) -> List[List[Queen]]:
-        return self.bord
-
-    # peux-etre useless
-    def get_size(self) -> int:
-        return self.size
 
     def put_queen(self, pos_list: int, pos_piece: int, color: Couleur) -> None:
 
@@ -51,12 +43,11 @@ class Chess_bord:
             self.nb_white += 1
         # if temporaire # peux-etre useless en function du bactraking
         if self.exist(pos_list, pos_piece):
-            self.no_access(pos_list, pos_piece)
             self.bord[pos_list].append(Queen(color, pos_piece))
 
-    def remove_queen(self, pos_list: int):
+    def remove_queen(self, pos_list: int, color: Couleur):
         last = self.bord[pos_list].pop()
-        self.no_access(pos_list, last.get_pos())
+        self.__remove_cell_no_access(pos_list, last.get_pos(), color)
         if last.get_color() == Couleur.BLACK:
             self.nb_black -= 1
         if last.get_color() == Couleur.WHITE:
@@ -73,6 +64,74 @@ class Chess_bord:
             return True
         return False
 
+    def is_safe(self, pos_list: int, pos_piece: int, color: str) -> bool:
+        check = True
+        res = [[pos_list, pos_piece, color]]
+        # pos actuel not free
+        if not self.exist(pos_list, pos_piece):
+            return False
+
+        # diagonale
+        for i in range(self.size):
+            for j in range(self.size):
+                if j == pos_piece and i != pos_list:
+                    res.append([i, j, color])
+
+                if i == pos_list and j != pos_piece:
+                    res.append([i, j, color])
+
+                diff_x = abs(i - pos_list)
+                diff_y = abs(j - pos_piece)
+                if diff_x == diff_y:
+                    res.append([i, j, color])
+
+                try:
+                    # queen vertical
+                    if i == pos_list:
+                        if self.bord[i][j].get_color() != color:
+                            check = False
+
+                    # horizontal
+                    if (
+                        self.bord[i][j].get_pos() == pos_piece
+                        and self.bord[i][j].get_color() != color
+                    ):
+                        check = False
+                    diff_x = abs(i - pos_list)
+                    diff_y = abs(self.bord[i][j].get_pos() - pos_piece)
+                    if diff_x == diff_y and self.bord[i][j].get_color() != color:
+                        check = False
+                except:
+                    pass
+        if check:
+            self.cell_no_access = self.cell_no_access + res
+            # print(self.cell_no_access)
+
+        return check
+
+    def __remove_cell_no_access(self, pos_piece, pos_list, color):
+        self.cell_no_access.remove([pos_list, pos_piece, color])
+        for i in range(self.size):
+            for j in range(self.size):
+                if [i, j, color] in self.cell_no_access:
+                    if j == pos_piece and i != pos_list:
+                        self.cell_no_access.remove([i, j, color])
+
+                    if i == pos_list and j != pos_piece:
+                        self.cell_no_access.remove([i, j, color])
+
+                    diff_x = abs(i - pos_list)
+                    diff_y = abs(j - pos_piece)
+                    if diff_x == diff_y:
+                        self.cell_no_access.remove([i, j, color])
+
+    def get_bord(self) -> List[List[Queen]]:
+        return self.bord
+
+    # peux-etre useless
+    def get_size(self) -> int:
+        return self.size
+
     def get_nb_white(self):
         return self.nb_white
 
@@ -82,167 +141,15 @@ class Chess_bord:
     def get_somme_nb_black_white(self):
         return self.nb_black + self.nb_white
 
-    def no_access(self, pos_liste: int, pos_piece: int, remove: bool = False):
-        if [pos_liste, pos_piece] not in self.cell_no_access:
-            check = True
-        else:
-            check = False
-
-        if not remove:
-            self.cell_no_access.append([pos_liste, pos_piece])
-        else:
-            self.cell_no_access.remove([pos_liste, pos_piece])
-        self.__while(
-            pos_liste,
-            pos_piece,
-            -1,
-            self.size,
-            remove,
-            "-",
-            "+",
-            ">",
-            "<",
-            "and",
-        )
-        self.__while(
-            pos_liste,
-            pos_piece,
-            self.size,
-            self.size,
-            remove,
-            "+",
-            "+",
-            "<",
-            "<",
-            "and",
-        )
-
-        self.__while(
-            pos_liste,
-            pos_piece,
-            -1,
-            -1,
-            remove,
-            "-",
-            "-",
-            ">",
-            ">",
-            "and",
-        )
-        self.__while(
-            pos_liste,
-            pos_piece,
-            self.size,
-            -1,
-            remove,
-            "+",
-            "-",
-            "<",
-            ">",
-            "and",
-        )
-        self.__while(
-            pos_liste,
-            0,
-            pos_liste,
-            self.size,
-            remove,
-            "*",
-            "+",
-            "==",
-            "<",
-            "and",
-        )
-        self.__while(
-            0,
-            pos_piece,
-            self.size,
-            pos_piece,
-            remove,
-            "+",
-            "*",
-            "<",
-            "==",
-            "and",
-        )
-        return check
-
-    def __while(
-        self,
-        x: int,
-        y: int,
-        compXto: int,
-        compYto: int,
-        remove: bool,
-        operatorOpX: str,
-        operatorOpY: str,
-        operatorBoucleX,
-        operatorBoucleY,
-        operatorLog: str = "None",
-    ):
-        ops = {
-            ">": operator.gt,
-            "<": operator.lt,
-            "+": operator.add,
-            "-": operator.sub,
-            "*": operator.mul,
-            "==": operator.eq,
-            "and": operator.and_,
-        }
-
-        if operatorOpY != "None":
-            y = ops[operatorOpY](y, 1)
-        if operatorOpX != "None":
-            x = ops[operatorOpX](x, 1)
-
-        while ops[operatorLog](
-            ops[operatorBoucleX](x, compXto), ops[operatorBoucleY](y, compYto)
-        ):
-
-            if not remove:
-                self.cell_no_access.append([x, y])
-            else:
-                self.cell_no_access.remove([x, y])
-            if operatorOpY != "None":
-                y = ops[operatorOpY](y, 1)
-            if operatorOpX != "None":
-                x = ops[operatorOpX](x, 1)
-
-    def get_cell_nb_no_access(self):
-        # remove dup from list of list
-        return len(list(map(list, set(map(tuple, self.cell_no_access)))))
-
-
-########################################################
-########################################################
-########################################################
-########################################################
-########################################################
-########################################################
-########################################################
-def is_safe(pos_list: int, pos_piece: int, color: str, chess_bord: Chess_bord) -> bool:
-    bord = chess_bord.get_bord()
-    # pos actuel not free
-    if not chess_bord.exist(pos_list, pos_piece):
-        return False
-
-    # queen vertical
-    for queen in chess_bord.get_elements_vertical(pos_list):
-        if queen.get_color() != color:
-            return False
-
-    # diagonale
-    for i in range(len(bord)):
-        for j in range(len(bord[i])):
-            # horizontal
-            if bord[i][j].get_pos() == pos_piece and bord[i][j].get_color() != color:
-                return False
-            diff_x = abs(i - pos_list)
-            diff_y = abs(bord[i][j].get_pos() - pos_piece)
-            if diff_x == diff_y and bord[i][j].get_color() != color:
-                return False
-
-    return True
+    def get_cell_no_access(self):
+        # remove dup
+        res = list(map(list, set(map(tuple, self.cell_no_access))))
+        cpt = 0
+        for i in range(self.size):
+            for j in range(self.size):
+                if [i, j, Couleur.WHITE] in res or [i, j, Couleur.BLACK] in res:
+                    cpt += 1
+        return cpt
 
 
 def check_break(chess_bord: Chess_bord, pos_liste: int, pos_piece: int):
@@ -291,7 +198,7 @@ def check_first_piece(chess_bord: Chess_bord):
 
 
 def backtracking(chess_bord: Chess_bord, res, switch: bool = True):
-    print(chess_bord.get_cell_nb_no_access())
+    print(chess_bord.get_cell_no_access())
     if check_first_piece(chess_bord):
         return 0
 
@@ -306,10 +213,10 @@ def backtracking(chess_bord: Chess_bord, res, switch: bool = True):
         if check_break(chess_bord, i, j):
             break
 
-        if is_safe(i, j, color, chess_bord):
+        if chess_bord.is_safe(i, j, color):
             chess_bord.put_queen(i, j, color)
             backtracking(deepcopy(chess_bord), res, deepcopy(not switch))
-            chess_bord.remove_queen(i)
+            chess_bord.remove_queen(i, color)
 
         j += 1
         if j == chess_bord.get_size():
