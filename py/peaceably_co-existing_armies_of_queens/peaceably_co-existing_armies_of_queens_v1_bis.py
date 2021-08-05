@@ -12,14 +12,14 @@ class Couleur(Enum):
 
 
 class Queen:
-    def __init__(self, color: str, pos: int):
+    def __init__(self, color: Couleur, pos: int):
         self.color = color
         self.pos = pos
 
     def get_pos(self) -> int:
         return self.pos
 
-    def get_color(self) -> str:
+    def get_color(self) -> Couleur:
         return self.color
 
 
@@ -66,7 +66,7 @@ class Chess_bord:
 
     def is_safe(self, pos_list: int, pos_piece: int, color: str) -> bool:
         check = True
-        res = [[pos_list, pos_piece, color]]
+        res = [[pos_list, pos_piece]]
         # pos actuel not free
         if not self.exist(pos_list, pos_piece):
             return False
@@ -75,15 +75,15 @@ class Chess_bord:
         for i in range(self.size):
             for j in range(self.size):
                 if j == pos_piece and i != pos_list:
-                    res.append([i, j, color])
+                    res.append([i, j])
 
                 if i == pos_list and j != pos_piece:
-                    res.append([i, j, color])
+                    res.append([i, j])
 
                 diff_x = abs(i - pos_list)
                 diff_y = abs(j - pos_piece)
                 if diff_x == diff_y:
-                    res.append([i, j, color])
+                    res.append([i, j])
 
                 try:
                     # queen vertical
@@ -102,6 +102,7 @@ class Chess_bord:
                     if diff_x == diff_y and self.bord[i][j].get_color() != color:
                         check = False
                 except:
+                    ### à gerer
                     pass
         if check:
             self.cell_no_access = self.cell_no_access + res
@@ -110,20 +111,20 @@ class Chess_bord:
         return check
 
     def __remove_cell_no_access(self, pos_piece, pos_list, color):
-        self.cell_no_access.remove([pos_list, pos_piece, color])
+        self.cell_no_access.remove([pos_list, pos_piece])
         for i in range(self.size):
             for j in range(self.size):
-                if [i, j, color] in self.cell_no_access:
+                if [i, j] in self.cell_no_access:
                     if j == pos_piece and i != pos_list:
-                        self.cell_no_access.remove([i, j, color])
+                        self.cell_no_access.remove([i, j])
 
                     if i == pos_list and j != pos_piece:
-                        self.cell_no_access.remove([i, j, color])
+                        self.cell_no_access.remove([i, j])
 
                     diff_x = abs(i - pos_list)
                     diff_y = abs(j - pos_piece)
                     if diff_x == diff_y:
-                        self.cell_no_access.remove([i, j, color])
+                        self.cell_no_access.remove([i, j])
 
     def get_bord(self) -> List[List[Queen]]:
         return self.bord
@@ -144,12 +145,12 @@ class Chess_bord:
     def get_cell_no_access(self):
         # remove dup
         res = list(map(list, set(map(tuple, self.cell_no_access))))
-        cpt = 0
-        for i in range(self.size):
-            for j in range(self.size):
-                if [i, j, Couleur.WHITE] in res or [i, j, Couleur.BLACK] in res:
-                    cpt += 1
-        return cpt
+        # cpt = 0
+        # for i in range(self.size):
+        #     for j in range(self.size):
+        #         if [i, j, Couleur.WHITE] in res or [i, j, Couleur.BLACK] in res:
+        #             cpt += 1
+        return res
 
 
 def check_break(chess_bord: Chess_bord, pos_liste: int, pos_piece: int):
@@ -198,50 +199,74 @@ def check_first_piece(chess_bord: Chess_bord):
 
 
 def backtracking(chess_bord: Chess_bord, res, switch: bool = True):
-    print(chess_bord.get_cell_no_access())
+    # print(chess_bord.get_cell_no_access())
     if check_first_piece(chess_bord):
         return 0
 
     j = 0
     i = 0
-    while i < chess_bord.get_size():
-        if switch:
-            color = Couleur.BLACK
-        else:
-            color = Couleur.WHITE
 
-        if check_break(chess_bord, i, j):
-            break
+    if not (
+        chess_bord.get_size() * chess_bord.get_size() == chess_bord.get_cell_no_access()
+        and chess_bord.check_egal_black_white()
+    ) or not (
+        chess_bord.get_cell_no_access() - 1
+        == chess_bord.get_size() * chess_bord.get_size() - 1
+        and chess_bord.check_egal_black_white()
+    ):
 
-        if chess_bord.is_safe(i, j, color):
-            chess_bord.put_queen(i, j, color)
-            backtracking(deepcopy(chess_bord), res, deepcopy(not switch))
-            chess_bord.remove_queen(i, color)
+        while i < chess_bord.get_size():
+            if switch:
+                color = Couleur.BLACK
+            else:
+                color = Couleur.WHITE
 
-        j += 1
-        if j == chess_bord.get_size():
-            i += 1
-            j = 0
+            if check_break(chess_bord, i, j):
+                break
+
+            if chess_bord.is_safe(i, j, color):
+                chess_bord.put_queen(i, j, color)
+                backtracking(deepcopy(chess_bord), res, deepcopy(not switch))
+                chess_bord.remove_queen(i, color)
+
+            j += 1
+            if j == chess_bord.get_size():
+                i += 1
+                j = 0
     if chess_bord.check_egal_black_white():
-        f.write(
-            "{"
-            + str(print_chess(chess_bord.get_bord()))
-            + str(chess_bord.get_somme_nb_black_white())
-            + "},\n"
-        )
+        if check_dup(chess_bord, res):
+            res.append(chess_bord)
+            # async
+            f.write(
+                "{"
+                + str(print_chess(chess_bord.get_bord()))
+                + str(chess_bord.get_somme_nb_black_white())
+                + "},\n"
+            )
+
+
+def check_dup(chess_bord: Chess_bord, res: list) -> bool:
+    tmp = print_chess(chess_bord.get_bord())
+    tmp2 = []
+    for i in res:
+        tmp2.append(print_chess(i.get_bord()))
+    for i in tmp2:
+        if i == tmp:
+            return False
+    return True
 
 
 def print_chess(chess_bord) -> list:
     res = []
     for i in range(len(chess_bord)):
         for j in chess_bord[i]:
-            res.append([j.get_color(), i, j.get_pos()])
+            res.append([j.get_color().value, i, j.get_pos()])
     return res
 
 
 if __name__ == "__main__":
     res = []
-    n = 3
+    n = 5
     path = os.path.join(
         "./py/peaceably_co-existing_armies_of_queens/resultat/text_json",
         "chess_bord_" + str(n) + "_bis.txt",
