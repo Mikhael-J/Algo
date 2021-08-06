@@ -3,6 +3,7 @@ from copy import deepcopy
 from enum import Enum
 import os.path
 import operator
+import time
 
 
 class Couleur(Enum):
@@ -33,6 +34,18 @@ class Chess_bord:
         self.nb_black = 0
         self.cell_no_access = []
 
+    # use for rendre object unique
+    def __eq__(self, info_bord):
+        return (
+            self.cell_no_access == info_bord.cell_no_access
+            and self.nb_black == info_bord.nb_black
+            and self.nb_white == info_bord.nb_white
+        )
+
+    # no use
+    def __hash__(self):
+        return hash(("bord", self.bord, "size", self.size))
+
     def get_elements_vertical(self, pos_list: int) -> List[Queen]:
         return self.bord[pos_list]
 
@@ -56,7 +69,7 @@ class Chess_bord:
 
     def remove_queen(self, pos_list: int):
         last = self.bord[pos_list].pop()
-        self.no_access(pos_list, last.get_pos())
+        self.no_access(pos_list, last.get_pos(), True)
         if last.get_color() == Couleur.BLACK:
             self.nb_black -= 1
         if last.get_color() == Couleur.WHITE:
@@ -176,8 +189,8 @@ class Chess_bord:
         remove: bool,
         operatorOpX: str,
         operatorOpY: str,
-        operatorBoucleX,
-        operatorBoucleY,
+        operatorBoucleX: str,
+        operatorBoucleY: str,
         operatorLog: str = "None",
     ):
         ops = {
@@ -190,10 +203,8 @@ class Chess_bord:
             "and": operator.and_,
         }
 
-        if operatorOpY != "None":
-            y = ops[operatorOpY](y, 1)
-        if operatorOpX != "None":
-            x = ops[operatorOpX](x, 1)
+        y = ops[operatorOpY](y, 1)
+        x = ops[operatorOpX](x, 1)
 
         while ops[operatorLog](
             ops[operatorBoucleX](x, compXto), ops[operatorBoucleY](y, compYto)
@@ -213,13 +224,6 @@ class Chess_bord:
         return len(list(map(list, set(map(tuple, self.cell_no_access)))))
 
 
-########################################################
-########################################################
-########################################################
-########################################################
-########################################################
-########################################################
-########################################################
 def is_safe(pos_list: int, pos_piece: int, color: str, chess_bord: Chess_bord) -> bool:
     bord = chess_bord.get_bord()
     # pos actuel not free
@@ -291,7 +295,7 @@ def check_first_piece(chess_bord: Chess_bord):
 
 
 def backtracking(chess_bord: Chess_bord, res, switch: bool = True):
-    print(chess_bord.get_cell_nb_no_access())
+    # print(chess_bord.get_cell_nb_no_access())
     if check_first_piece(chess_bord):
         return 0
 
@@ -316,29 +320,57 @@ def backtracking(chess_bord: Chess_bord, res, switch: bool = True):
             i += 1
             j = 0
     if chess_bord.check_egal_black_white():
-        f.write(
-            "{"
-            + str(print_chess(chess_bord.get_bord()))
-            + str(chess_bord.get_somme_nb_black_white())
-            + "},\n"
-        )
+        if check_dup(chess_bord, res):
+            # if chess_bord not in res:
+            res.append(chess_bord)
+            f.write(
+                "{"
+                + str(print_chess(chess_bord.get_bord()))
+                + str(chess_bord.get_somme_nb_black_white())
+                + "},\n"
+            )
+
+
+def check_dup(chess_bord: Chess_bord, res: list) -> bool:
+    tmp = print_chess(chess_bord.get_bord())
+    tmp2 = []
+    for i in res:
+        tmp2.append(print_chess(i.get_bord()))
+    for i in tmp2:
+        if i == tmp:
+            return False
+    return True
 
 
 def print_chess(chess_bord) -> list:
     res = []
     for i in range(len(chess_bord)):
         for j in chess_bord[i]:
-            res.append([j.get_color(), i, j.get_pos()])
+            res.append([j.get_color().value, i, j.get_pos()])
     return res
 
 
 if __name__ == "__main__":
     res = []
-    n = 5
+    n = 4
     path = os.path.join(
         "./py/peaceably_co-existing_armies_of_queens/resultat/text_json",
         "chess_bord_" + str(n) + "_bis_bis.txt",
     )
     f = open(path, "w")
     table = Chess_bord(n)
+    x = time.time()
     backtracking(table, res)
+    print(time.time() - x)
+
+    # t = [Chess_bord(n), Chess_bord(n)]
+    # t[1].put_queen(2, 2, "w")
+    # t[1].put_queen(2, 1, "w")
+    # t[0].put_queen(1, 1, "b")
+    # a = Chess_bord(n)
+    # a.put_queen(2, 2, "w")
+    # a.put_queen(2, 1, "w")
+    # a.put_queen(2, 0, "w")
+    # if a not in t:
+    #     print(a)
+    #     print(t)

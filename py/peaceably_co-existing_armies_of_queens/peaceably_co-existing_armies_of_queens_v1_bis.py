@@ -3,6 +3,7 @@ from copy import deepcopy
 from enum import Enum
 import os.path
 import operator
+import time
 
 
 class Couleur(Enum):

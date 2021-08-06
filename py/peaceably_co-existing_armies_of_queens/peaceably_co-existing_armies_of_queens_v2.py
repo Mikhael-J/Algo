@@ -2,6 +2,7 @@ from enum import Enum
 from typing import List
 from copy import deepcopy
 import os.path
+import time
 
 
 class Couleur(Enum):
