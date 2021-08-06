@@ -334,7 +334,7 @@ def print_chess(chess_bord) -> list:
 
 if __name__ == "__main__":
     res = []
-    n = 5
+    n = 3
     path = os.path.join(
         "./py/peaceably_co-existing_armies_of_queens/resultat/text_json",
         "chess_bord_" + str(n) + "_bis_bis.txt",
