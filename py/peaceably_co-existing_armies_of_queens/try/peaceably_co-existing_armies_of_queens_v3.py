@@ -4,6 +4,8 @@ from enum import Enum
 import os.path
 import operator
 import time
+import json
+import sys
 
 
 class Couleur(Enum):
@@ -29,22 +31,20 @@ class Chess_bord:
         self.size = size
         # bord empty
         self.bord = [[] for i in range(self.size)]
+        self.list_pos_queen_x_y = []
 
         self.nb_white = 0
         self.nb_black = 0
         self.cell_no_access = []
+        self.cell_no_access_color = []
 
     # use for rendre object unique
-    def __eq__(self, info_bord):
-        return (
-            self.cell_no_access == info_bord.cell_no_access
-            and self.nb_black == info_bord.nb_black
-            and self.nb_white == info_bord.nb_white
-        )
+    # def __eq__(self, info_bord):
+    #     return self.list_pos_queen_x_y == info_bord.list_pos_queen_x_y
 
-    # no use
-    def __hash__(self):
-        return hash(("bord", self.bord, "size", self.size))
+    # # no use
+    # def __hash__(self):
+    #     return hash(("bord", self.bord, "size", self.size))
 
     def get_elements_vertical(self, pos_list: int) -> List[Queen]:
         return self.bord[pos_list]
@@ -57,19 +57,21 @@ class Chess_bord:
         return self.size
 
     def put_queen(self, pos_list: int, pos_piece: int, color: Couleur) -> None:
-
+        self.list_pos_queen_x_y.append([pos_list, pos_piece])
         if color == Couleur.BLACK:
             self.nb_black += 1
         if color == Couleur.WHITE:
             self.nb_white += 1
         # if temporaire # peux-etre useless en function du bactraking
         if self.exist(pos_list, pos_piece):
-            self.no_access(pos_list, pos_piece)
+            self.no_access(pos_list, pos_piece, color)
             self.bord[pos_list].append(Queen(color, pos_piece))
 
     def remove_queen(self, pos_list: int):
+
         last = self.bord[pos_list].pop()
-        self.no_access(pos_list, last.get_pos(), True)
+        self.list_pos_queen_x_y.remove([pos_list, last.get_pos()])
+        self.no_access(pos_list, last.get_pos(), last.get_color(), True)
         if last.get_color() == Couleur.BLACK:
             self.nb_black -= 1
         if last.get_color() == Couleur.WHITE:
@@ -95,95 +97,38 @@ class Chess_bord:
     def get_somme_nb_black_white(self):
         return self.nb_black + self.nb_white
 
-    def no_access(self, pos_liste: int, pos_piece: int, remove: bool = False):
+    def no_access(
+        self, pos_liste: int, pos_piece: int, color: Couleur, rmv: bool = False
+    ):
         if [pos_liste, pos_piece] not in self.cell_no_access:
             check = True
         else:
             check = False
 
-        if not remove:
+        if not rmv:
             self.cell_no_access.append([pos_liste, pos_piece])
         else:
             self.cell_no_access.remove([pos_liste, pos_piece])
-        self.__while(
-            pos_liste,
-            pos_piece,
-            -1,
-            self.size,
-            remove,
-            "-",
-            "+",
-            ">",
-            "<",
-            "and",
-        )
-        self.__while(
-            pos_liste,
-            pos_piece,
-            self.size,
-            self.size,
-            remove,
-            "+",
-            "+",
-            "<",
-            "<",
-            "and",
-        )
+        size = self.size
+        l = [
+            [pos_liste, pos_piece, color, -1, size, rmv, "-", "+", ">", "<", "and"],
+            [pos_liste, pos_piece, color, size, size, rmv, "+", "+", "<", "<", "and"],
+            [pos_liste, pos_piece, color, -1, -1, rmv, "-", "-", ">", ">", "and"],
+            [pos_liste, pos_piece, color, size, -1, rmv, "+", "-", "<", ">", "and"],
+            [pos_liste, 0, color, pos_liste, size, rmv, "*", "+", "==", "<", "and"],
+            [0, pos_piece, color, size, pos_piece, rmv, "+", "*", "<", "==", "and"],
+        ]
 
-        self.__while(
-            pos_liste,
-            pos_piece,
-            -1,
-            -1,
-            remove,
-            "-",
-            "-",
-            ">",
-            ">",
-            "and",
-        )
-        self.__while(
-            pos_liste,
-            pos_piece,
-            self.size,
-            -1,
-            remove,
-            "+",
-            "-",
-            "<",
-            ">",
-            "and",
-        )
-        self.__while(
-            pos_liste,
-            0,
-            pos_liste,
-            self.size,
-            remove,
-            "*",
-            "+",
-            "==",
-            "<",
-            "and",
-        )
-        self.__while(
-            0,
-            pos_piece,
-            self.size,
-            pos_piece,
-            remove,
-            "+",
-            "*",
-            "<",
-            "==",
-            "and",
-        )
+        for i in l:
+            self.__while(*i)
+
         return check
 
     def __while(
         self,
         x: int,
         y: int,
+        color: Couleur,
         compXto: int,
         compYto: int,
         remove: bool,
@@ -212,8 +157,10 @@ class Chess_bord:
 
             if not remove:
                 self.cell_no_access.append([x, y])
+                self.cell_no_access_color.append([x, y, color])
             else:
                 self.cell_no_access.remove([x, y])
+                self.cell_no_access_color.remove([x, y, color])
             if operatorOpY != "None":
                 y = ops[operatorOpY](y, 1)
             if operatorOpX != "None":
@@ -294,13 +241,38 @@ def check_first_piece(chess_bord: Chess_bord):
     return False
 
 
-def backtracking(chess_bord: Chess_bord, res, switch: bool = True):
-    # print(chess_bord.get_cell_nb_no_access())
+def backtracking(
+    chess_bord: Chess_bord,
+    res,
+    depth,
+    depth_save,
+    switch: bool = True,
+):
+    if depth > depth_save[0]:
+        depth_save[0] = depth
+
     if check_first_piece(chess_bord):
         return 0
 
+    if depth_save[0] >= depth:
+        if chess_bord.check_egal_black_white():
+
+            # if print_chess(chess_bord.get_bord()) not in res:
+            # print(depth_save)
+            # print(depth)
+            # res.append(print_chess(chess_bord.get_bord()))
+            json.dump(
+                {
+                    chess_bord.get_somme_nb_black_white(): print_chess(
+                        chess_bord.get_bord()
+                    )
+                },
+                f,
+            )
+            f.write("\n")
     j = 0
     i = 0
+    # if checker(chess_bord):
     while i < chess_bord.get_size():
         if switch:
             color = Couleur.BLACK
@@ -309,37 +281,47 @@ def backtracking(chess_bord: Chess_bord, res, switch: bool = True):
 
         if check_break(chess_bord, i, j):
             break
-
+        color = Couleur.WHITE
         if is_safe(i, j, color, chess_bord):
             chess_bord.put_queen(i, j, color)
-            backtracking(deepcopy(chess_bord), res, deepcopy(not switch))
+            backtracking(
+                deepcopy(chess_bord),
+                res,
+                depth + 1,
+                depth_save,
+                deepcopy(not switch),
+            )
+            chess_bord.remove_queen(i)
+        color = Couleur.BLACK
+        if is_safe(i, j, color, chess_bord):
+            chess_bord.put_queen(i, j, color)
+            backtracking(
+                deepcopy(chess_bord),
+                res,
+                depth + 1,
+                depth_save,
+                deepcopy(not switch),
+            )
             chess_bord.remove_queen(i)
 
         j += 1
         if j == chess_bord.get_size():
             i += 1
             j = 0
-    if chess_bord.check_egal_black_white():
-        if check_dup(chess_bord, res):
-            # if chess_bord not in res:
-            res.append(chess_bord)
-            f.write(
-                "{"
-                + str(print_chess(chess_bord.get_bord()))
-                + str(chess_bord.get_somme_nb_black_white())
-                + "},\n"
-            )
 
 
-def check_dup(chess_bord: Chess_bord, res: list) -> bool:
-    tmp = print_chess(chess_bord.get_bord())
-    tmp2 = []
-    for i in res:
-        tmp2.append(print_chess(i.get_bord()))
-    for i in tmp2:
-        if i == tmp:
-            return False
-    return True
+def checker(chess_bord: Chess_bord):
+    if not (
+        chess_bord.get_size() * chess_bord.get_size()
+        == chess_bord.get_cell_nb_no_access()
+        and chess_bord.check_egal_black_white()
+    ) or not (
+        chess_bord.get_cell_nb_no_access() - 1
+        == chess_bord.get_size() * chess_bord.get_size() - 1
+        and chess_bord.check_egal_black_white()
+    ):
+        return True
+    return False
 
 
 def print_chess(chess_bord) -> list:
@@ -351,26 +333,17 @@ def print_chess(chess_bord) -> list:
 
 
 if __name__ == "__main__":
+    depth = 0
+    depth_save = [0]
     res = []
-    n = 4
-    path = os.path.join(
-        "./py/peaceably_co-existing_armies_of_queens/resultat/text_json",
-        "chess_bord_" + str(n) + "_bis_bis.txt",
-    )
+    n = int(sys.argv[1])
+    path = "./resultat/text_json/chess_bord_" + str(n) + "_v3.txt"
+    # path = os.path.join(
+    #     "./py/peaceably_co-existing_armies_of_queens/resultat/text_json",
+    #     "chess_bord_" + str(n) + "_v3.txt",
+    # )
     f = open(path, "w")
     table = Chess_bord(n)
-    x = time.time()
-    backtracking(table, res)
-    print(time.time() - x)
-
-    # t = [Chess_bord(n), Chess_bord(n)]
-    # t[1].put_queen(2, 2, "w")
-    # t[1].put_queen(2, 1, "w")
-    # t[0].put_queen(1, 1, "b")
-    # a = Chess_bord(n)
-    # a.put_queen(2, 2, "w")
-    # a.put_queen(2, 1, "w")
-    # a.put_queen(2, 0, "w")
-    # if a not in t:
-    #     print(a)
-    #     print(t)
+    timee = time.time()
+    backtracking(table, res, depth, depth_save)
+    print(time.time() - timee)

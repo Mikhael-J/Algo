@@ -267,11 +267,12 @@ def print_chess(chess_bord) -> list:
 
 if __name__ == "__main__":
     res = []
-    n = 5
-    path = os.path.join(
-        "./py/peaceably_co-existing_armies_of_queens/resultat/text_json",
-        "chess_bord_" + str(n) + "_bis.txt",
-    )
+    n = 3
+    path = "./resultat/text_json/chess_bord_" + str(n) + "_bis.txt"
+    # path = os.path.join(
+    #     "./py/peaceably_co-existing_armies_of_queens/resultat/text_json",
+    #     "chess_bord_" + str(n) + "_bis.txt",
+    # )
     f = open(path, "w")
     table = Chess_bord(n)
     backtracking(table, res)

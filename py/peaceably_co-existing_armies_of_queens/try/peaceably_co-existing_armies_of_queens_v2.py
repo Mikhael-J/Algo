@@ -71,10 +71,22 @@ class Queen:
             i = i - diff
             res.append(i)
         i = self.pos_x
+
         while i < self.size_bord * self.size_bord and i % self.size_bord != 0:
             i = i + diff
             if i < self.size_bord * self.size_bord:
                 res.append(i)
+
+        # check = True
+        # diff_haut_gauche_bas_doite = self.size_bord + 1
+        # diff_haut_droit_bas_gauche = self.size_bord - 1
+        # diago_haut_droite = self.pos_x
+        # diago_haut_gauche = self.pos_x
+        # diago_bas_droite = self.pos_x
+        # diago_bas_gauche = self.pos_x
+        # while check:
+
+        #     pass
 
         res.sort()
         return res
