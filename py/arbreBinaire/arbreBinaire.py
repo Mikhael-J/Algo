@@ -29,8 +29,18 @@ class arbreBinaire:
             self.gauche.getAllFormTable()
         if self.droite != None:
             self.droite.getAllFormTable()
-        
 
+
+# fonction find(A,e)
+#         Si A = .
+#             retourner Faux
+#         Sinon A = (x,FilsGauche,FilsDroit)
+#             Si x = e
+#                 retourner Vrai
+#             Sinon si e < x
+#                 retourner Recherche(FilsGauche,e)
+#             Sinon
+#                 retourner Recherche(FilsDroit,e)
 
 arbre = arbreBinaire(25)
 arbre.addElement(44)
