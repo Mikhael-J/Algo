@@ -9,7 +9,7 @@ class alphabet:
         self._ordre_regression = ordre_regression
         pass
 
-    def compare(self, mot1, mot2):
+    def compare(self, mot1: str or int, mot2: str or int):
         mot1, mot2 = self._type(mot1, mot2)
 
         if len(mot1) != len(mot2):
@@ -37,13 +37,13 @@ class alphabet:
                 return "mot inconue"
         return "mot1 = mot2"
 
-    def _type(self, mot1, mot2):
+    def _type(self, mot1: str or int, mot2: str or int):
         if type(mot1) == int:
             mot1 = [int(i) for i in str(mot1)]
             mot2 = [int(i) for i in str(mot2)]
         return mot1, mot2
 
-    def _ifEmptyAlphabet(self, mot1, mot2):
+    def _ifEmptyAlphabet(self, mot1: str or int, mot2: str or int):
         if self._alphabet == []:
             for i in range(len(mot1)):
                 if mot1[i] != mot2[i]:
@@ -58,18 +58,18 @@ class alphabet:
 
 if __name__ == "__main__":
     test = alphabet([1, 2, 3, 4, 8, 9, 7])
-    print(test.compare(49, 57))
+    print(test.compare(49, 47))
 
-
-relation = {
-    a: [b, c, g, h, i],
-    b: [c, g, h, i, j],
-    c: [],
-    d: [f, g, h, i, j],
-    e: [f, g, h, i, j],
-    f: [g, h, i, j],
-    g: [h, i, j],
-    h: [i, j],
-    i: [],
-    j: [],
-}
+# {element supperieur: element inferieur}
+# relation = {
+#     a: [b, c, g, h, i, j],
+#     b: [c, g, h, i, j],
+#     c: [],
+#     d: [f, g, h, i, j],
+#     e: [f, g, h, i, j],
+#     f: [g, h, i, j],
+#     g: [h, i, j],
+#     h: [i, j],
+#     i: [],
+#     j: [],
+# }
