@@ -3,5 +3,5 @@
 - Arbre binaire
 - Backtraking
 - Recursion
-- automate a pile pour verifier les couples
-- relation d'ordre
+- Automate a pile pour verifier les couples
+- Relation d'ordre
